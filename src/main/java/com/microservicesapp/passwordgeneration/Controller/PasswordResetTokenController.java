@@ -25,7 +25,7 @@ public class PasswordResetTokenController {
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
 
-    @PostMapping("/reset-password-request")
+    @PostMapping("/forgot-password")
     public ResponseEntity<String> resetPassword(@RequestParam String email) {
 
         try {
