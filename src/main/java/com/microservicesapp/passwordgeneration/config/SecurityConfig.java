@@ -21,7 +21,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .authorizeHttpRequests(req -> req.anyRequest().permitAll())
+                .authorizeHttpRequests(req -> req
+                        .requestMatchers("/users/register").hasAnyRole("ADMIN", "MODERATOR")
+                        .anyRequest().permitAll()  // Allow all other requests
+                )
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm ->{
                             sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
