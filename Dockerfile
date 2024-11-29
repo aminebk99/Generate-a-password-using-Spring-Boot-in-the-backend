@@ -4,6 +4,9 @@ FROM openjdk:17-jdk-slim
 # Set the working directory
 WORKDIR /app
 
+CMD mvn clean package -DskipTests
+
+
 # Copy the built application jar file into the container
 COPY target/password-generation-0.0.1-SNAPSHOT.jar app.jar
 
