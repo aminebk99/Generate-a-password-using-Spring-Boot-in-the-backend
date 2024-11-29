@@ -4,6 +4,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,13 +17,15 @@ import org.springframework.web.filter.CorsFilter;
 import java.util.List;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(req -> req
-                        .requestMatchers("/users/register").hasAnyRole("ADMIN", "MODERATOR")
+                        //.requestMatchers("/users/register").authenticated()
+                        //.requestMatchers("/users/all-users").hasAnyAuthority("ADMIN", "MODERATOR")
                         .anyRequest().permitAll()  // Allow all other requests
                 )
                 .cors(Customizer.withDefaults())
@@ -35,9 +38,6 @@ public class SecurityConfig {
                     lg.invalidateHttpSession(true);
                     lg.clearAuthentication(true);
                 })
-
-
-
                 .csrf(AbstractHttpConfigurer::disable);
 
         return http.build();

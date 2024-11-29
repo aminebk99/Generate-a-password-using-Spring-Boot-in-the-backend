@@ -1,6 +1,7 @@
 package com.microservicesapp.passwordgeneration.Controller;
 
 import com.microservicesapp.passwordgeneration.Exception.UserAlreadyExistsException;
+import com.microservicesapp.passwordgeneration.Repository.UserRepository;
 import com.microservicesapp.passwordgeneration.Service.UserService;
 import com.microservicesapp.passwordgeneration.entity.User;
 import jakarta.servlet.http.Cookie;
@@ -16,17 +17,19 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody User user) {
+    public ResponseEntity<String> register(@RequestBody User user, HttpServletRequest request) {
         try {
-            String savedUser = userService.registerUser(user);
+            String savedUser = userService.registerUser(user, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
         } catch (UserAlreadyExistsException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
@@ -37,7 +40,7 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<String> loginUsers(@RequestBody User user, HttpServletRequest request, HttpServletResponse response) {
         try {
-            String msg = userService.LoginUser(user);
+            String msg = userService.LoginUser(user, request);
             User user1 = userService.getUserByUsername(user.getUsername());
             HttpSession session = request.getSession(true);
             session.setAttribute("user", user1);
@@ -110,7 +113,7 @@ public class UserController {
         long currentTime = System.currentTimeMillis();
         return (currentTime - sessionCreationTime) > 2 * 60 * 1000;
     }
-    @GetMapping
+    @GetMapping("/all-users")
     public ResponseEntity<List<User>> GetUsers(){
         return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsers());
     }
@@ -118,4 +121,37 @@ public class UserController {
     public void deleteAl(){
         userService.DeleteAll();
     }
+
+    @DeleteMapping("{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long id){
+        try {
+            userService.deleteUserById(id);
+            return ResponseEntity.status(HttpStatus.OK).body("User deleted successfully.");
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred");
+        }
+    }
+    @PutMapping("/account-locked/{id}")
+    public ResponseEntity<String> accountLocked(@PathVariable Long id){
+        try {
+            // Toggling the account lock status
+            userService.toggleAccountLockStatus(id);
+
+            // Retrieving the user after updating, to determine the new lock status
+            Optional<User> userOptional = userRepository.findById(id);
+            if (userOptional.isPresent()) {
+                boolean isLocked = userOptional.get().getAccountNonLocked();
+                String statusMessage = isLocked ? "User account unlocked successfully." : "User account locked successfully.";
+                return ResponseEntity.status(HttpStatus.OK).body(statusMessage);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while processing the request.");
+        }
+    }
+
+
+
 }
